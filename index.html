@@ -1,0 +1,2183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Persona Council — Private Multi-Agent Consensus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Finovia Modern SaaS Light Theme */
+      --bg-page: #f8faf7;
+      --bg-card: #ffffff;
+      --bg-card-subtle: #f4f7f3;
+      --bg-input: #ffffff;
+      --border-subtle: #e5ece2;
+      --border-hover: #cbd5e1;
+      --border-focus: #16a34a;
+      
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
+      
+      --primary: #0f172a;
+      --primary-hover: #1e293b;
+      
+      --accent-green: #16a34a;
+      --accent-green-light: #22c55e;
+      --accent-green-bg: #ecfdf5;
+      --accent-green-border: #bbf7d0;
+      
+      --accent-lime: #84cc16;
+      --accent-lime-bg: #f7fee7;
+      
+      --danger-red: #ef4444;
+      --danger-red-bg: #fef2f2;
+      --danger-red-border: #fecaca;
+      
+      --warning-amber: #f59e0b;
+      --warning-amber-bg: #fffbeb;
+      --warning-amber-border: #fde68a;
+      
+      --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: "JetBrains Mono", monospace;
+      
+      --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.04);
+      --shadow-md: 0 10px 30px -4px rgba(15, 23, 42, 0.05), 0 4px 10px -2px rgba(15, 23, 42, 0.02);
+      --shadow-lg: 0 20px 40px -8px rgba(15, 23, 42, 0.08), 0 8px 16px -4px rgba(15, 23, 42, 0.03);
+      
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-full: 9999px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      background-image: 
+        radial-gradient(at 15% 15%, rgba(220, 252, 231, 0.6) 0px, transparent 45%),
+        radial-gradient(at 85% 10%, rgba(240, 253, 244, 0.8) 0px, transparent 40%),
+        radial-gradient(at 50% 90%, rgba(220, 252, 231, 0.4) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      padding: 24px 16px 80px;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    /* Top Navigation Bar */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      padding: 12px 24px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-full);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-badge {
+      width: 38px;
+      height: 38px;
+      background: #111827;
+      color: #a3e635;
+      font-weight: 800;
+      font-size: 1.1rem;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+
+    .logo-title h1 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text-main);
+    }
+
+    .nav-tag {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-green);
+      background: var(--accent-green-bg);
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+      margin-left: 6px;
+    }
+
+    /* Hero Headline Section */
+    .hero-section {
+      text-align: center;
+      margin-bottom: 36px;
+      padding: 10px 0 20px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent-green-bg);
+      border: 1px solid var(--accent-green-border);
+      color: #15803d;
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 6px 16px;
+      border-radius: var(--radius-full);
+      margin-bottom: 18px;
+      box-shadow: 0 2px 6px rgba(22, 163, 74, 0.06);
+    }
+
+    .hero-badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-green);
+    }
+
+    .hero-title {
+      font-size: 2.75rem;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.04em;
+      color: #0f172a;
+      max-width: 760px;
+      margin: 0 auto 14px;
+    }
+
+    .hero-subtitle {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 580px;
+      margin: 0 auto;
+      font-weight: 500;
+    }
+
+    /* Tabs (Pill switcher) */
+    .tabs-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .tabs {
+      display: inline-flex;
+      gap: 6px;
+      background: #e9f0e6;
+      padding: 5px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 24px;
+      border-radius: var(--radius-full);
+      font-size: 0.92rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .tab-btn.active {
+      background: #ffffff;
+      color: var(--text-main);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 26px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-md);
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-lg);
+      border-color: #dbe4d8;
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-main);
+    }
+
+    /* Forms */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    textarea, input[type="text"] {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+    }
+
+    textarea:focus, input[type="text"]:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 84px;
+      line-height: 1.6;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      border-radius: var(--radius-full);
+      padding: 14px 28px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      width: 100%;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.18);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .btn-secondary {
+      background: #ffffff;
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #f8faf8;
+      border-color: var(--border-hover);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-sm {
+      padding: 7px 14px;
+      font-size: 0.8rem;
+      width: auto;
+      border-radius: var(--radius-full);
+    }
+
+    .arrow-icon {
+      font-size: 1.1rem;
+      line-height: 1;
+      transition: transform 0.2s ease;
+    }
+
+    .btn:hover .arrow-icon {
+      transform: translate(2px, -2px);
+    }
+
+    /* Presets row */
+    .presets-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .preset-pill {
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .preset-pill:hover {
+      background: #ffffff;
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+      transform: translateY(-1px);
+    }
+
+    /* Personas Editor */
+    .persona-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+
+    .persona-row input {
+      background: var(--bg-card-subtle);
+      border-color: var(--border-subtle);
+    }
+
+    .persona-row .btn-remove {
+      background: transparent;
+      color: var(--danger-red);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-full);
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-size: 0.9rem;
+    }
+
+    .persona-row .btn-remove:hover {
+      background: var(--danger-red-bg);
+      border-color: var(--danger-red-border);
+    }
+
+    /* Checkbox */
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 20px 0;
+      cursor: pointer;
+      user-select: none;
+      padding: 12px 16px;
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+    }
+
+    .checkbox-group input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent-green);
+      cursor: pointer;
+    }
+
+    .checkbox-group span {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* Room Header */
+    .room-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 18px 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .room-code-tag {
+      font-family: var(--font-mono);
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--accent-green);
+      letter-spacing: 0.1em;
+    }
+
+    .share-link-box {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex: 1;
+      max-width: 480px;
+    }
+
+    .share-link-input {
+      font-size: 0.84rem;
+      padding: 10px 14px;
+      background: var(--bg-card-subtle);
+      color: var(--text-muted);
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-subtle);
+    }
+
+    /* Chips */
+    .chips-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.82rem;
+      font-weight: 700;
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+    }
+
+    .chip-primary {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #1d4ed8;
+    }
+
+    .chip-success {
+      background: var(--accent-green-bg);
+      border-color: var(--accent-green-border);
+      color: #15803d;
+    }
+
+    .chip-warning {
+      background: var(--warning-amber-bg);
+      border-color: var(--warning-amber-border);
+      color: #b45309;
+    }
+
+    .chip-danger {
+      background: var(--danger-red-bg);
+      border-color: var(--danger-red-border);
+      color: #b91c1c;
+    }
+
+    /* Status Banner */
+    .status-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 22px;
+      border-radius: var(--radius-lg);
+      margin-bottom: 24px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border: 1px solid var(--border-subtle);
+      background: #ffffff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .pulse-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.6);
+      margin-right: 10px;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.5; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.2); }
+      100% { opacity: 0.5; transform: scale(0.9); }
+    }
+
+    /* ====================================================================
+       VISUAL CONSENSUS ARENA (The Red/Green Line Debate Map)
+       ==================================================================== */
+    .arena-container {
+      position: relative;
+      background: linear-gradient(180deg, #ffffff 0%, #f7faf6 100%);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+    }
+
+    .arena-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .arena-title-box h3 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .arena-title-box p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .arena-legend {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-bar-green {
+      width: 16px;
+      height: 4px;
+      background: #16a34a;
+      border-radius: 2px;
+      box-shadow: 0 0 6px rgba(22, 163, 74, 0.4);
+    }
+
+    .legend-bar-red {
+      width: 16px;
+      height: 4px;
+      background: #ef4444;
+      border-radius: 2px;
+      box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+    }
+
+    .arena-stage {
+      position: relative;
+      width: 100%;
+      height: 380px;
+      border-radius: var(--radius-md);
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #arena-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .arena-nodes-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+    }
+
+    /* Central Decision Core */
+    .arena-core {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: #0f172a;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 25px rgba(15, 23, 42, 0.18);
+      z-index: 3;
+      text-align: center;
+      border: 3px solid #ffffff;
+      transition: all 0.3s ease;
+    }
+
+    .arena-core-icon {
+      font-size: 1.3rem;
+      line-height: 1;
+    }
+
+    .arena-core-label {
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 3px;
+    }
+
+    /* Agent Floating Nodes */
+    .agent-node {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      background: #ffffff;
+      border: 2px solid var(--border-subtle);
+      border-radius: var(--radius-full);
+      padding: 6px 14px 6px 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: var(--shadow-md);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .agent-node:hover {
+      transform: translate(-50%, -50%) scale(1.08);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--accent-green);
+    }
+
+    .agent-node-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #0f172a;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.8rem;
+    }
+
+    .agent-node-name {
+      font-weight: 700;
+      font-size: 0.84rem;
+      color: #0f172a;
+    }
+
+    .agent-node-score {
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: var(--radius-full);
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .agent-node-score.score-green {
+      background: var(--accent-green-bg);
+      color: #15803d;
+      border: 1px solid var(--accent-green-border);
+    }
+
+    .agent-node-score.score-amber {
+      background: var(--warning-amber-bg);
+      color: #b45309;
+      border: 1px solid var(--warning-amber-border);
+    }
+
+    .agent-node-score.score-red {
+      background: var(--danger-red-bg);
+      color: #b91c1c;
+      border: 1px solid var(--danger-red-border);
+    }
+
+    /* SVG Animated Lines */
+    .svg-line-green {
+      stroke: #16a34a;
+      stroke-width: 3;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 5px rgba(22, 163, 74, 0.4));
+      animation: pulseGreen 2s infinite ease-in-out;
+    }
+
+    .svg-line-red {
+      stroke: #ef4444;
+      stroke-width: 3;
+      stroke-dasharray: 6 6;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.5));
+      animation: dashMove 1.2s linear infinite;
+    }
+
+    @keyframes dashMove {
+      from { stroke-dashoffset: 24; }
+      to { stroke-dashoffset: 0; }
+    }
+
+    @keyframes pulseGreen {
+      0%, 100% { stroke-opacity: 0.7; stroke-width: 2.8; }
+      50% { stroke-opacity: 1; stroke-width: 3.8; }
+    }
+
+    /* Arena Inspector Drawer */
+    .arena-inspector {
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 18px;
+      margin-top: 14px;
+      font-size: 0.86rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    /* Proposals Grid */
+    .proposals-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 14px;
+    }
+
+    .proposal-card {
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      border-left: 5px solid var(--accent-green);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .proposal-author {
+      font-weight: 800;
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+      color: #0f172a;
+    }
+
+    .proposal-position {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+      color: var(--text-main);
+      line-height: 1.5;
+    }
+
+    .proposal-list {
+      list-style-type: none;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .proposal-list li {
+      margin-bottom: 4px;
+      position: relative;
+      padding-left: 14px;
+    }
+
+    .proposal-list li::before {
+      content: "•";
+      position: absolute;
+      left: 2px;
+      color: var(--accent-green);
+      font-weight: bold;
+    }
+
+    /* Critiques */
+    .critique-card {
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-subtle);
+      border-left: 4px solid var(--danger-red);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      font-size: 0.88rem;
+    }
+
+    .critique-header {
+      font-weight: 800;
+      color: #b91c1c;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Round Verdicts */
+    .round-container {
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .round-title {
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: var(--text-main);
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .verdict-box {
+      background: var(--bg-card-subtle);
+      border-left: 4px solid #0f172a;
+      padding: 18px;
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      margin-bottom: 16px;
+    }
+
+    .verdict-section {
+      margin-bottom: 12px;
+    }
+
+    .verdict-label {
+      font-weight: 800;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #0f172a;
+      margin-bottom: 3px;
+    }
+
+    .verdict-content {
+      font-size: 0.94rem;
+      color: #334155;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    .ratings-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .rating-badge {
+      display: inline-flex;
+      flex-direction: column;
+      padding: 10px 16px;
+      border-radius: var(--radius-md);
+      font-size: 0.84rem;
+      border: 1px solid transparent;
+      min-width: 150px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .rating-badge.score-green {
+      background: var(--accent-green-bg);
+      border-color: var(--accent-green-border);
+      color: #15803d;
+    }
+
+    .rating-badge.score-amber {
+      background: var(--warning-amber-bg);
+      border-color: var(--warning-amber-border);
+      color: #b45309;
+    }
+
+    .rating-badge.score-red {
+      background: var(--danger-red-bg);
+      border-color: var(--danger-red-border);
+      color: #b91c1c;
+    }
+
+    .rating-name {
+      font-weight: 800;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .rating-reason {
+      font-size: 0.78rem;
+      margin-top: 5px;
+      opacity: 0.95;
+    }
+
+    /* Comparison Card */
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 14px 0;
+    }
+
+    .comp-col {
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+
+    .comp-col.highlight {
+      border-color: var(--accent-green-border);
+      background: var(--accent-green-bg);
+    }
+
+    .comp-title {
+      font-weight: 800;
+      font-size: 0.92rem;
+      margin-bottom: 10px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.86rem;
+      margin-bottom: 6px;
+      color: var(--text-muted);
+    }
+
+    .stat-val {
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    details {
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      margin-top: 12px;
+    }
+
+    summary {
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    summary:hover {
+      color: var(--text-main);
+    }
+
+    /* Token Table */
+    .token-table-wrap {
+      overflow-x: auto;
+      margin-top: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    th {
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      letter-spacing: 0.05em;
+    }
+
+    tr.highlight-row {
+      background: rgba(34, 197, 94, 0.08);
+      font-weight: 700;
+    }
+
+    .progress-bar-bg {
+      background: #e9f0e6;
+      border-radius: var(--radius-full);
+      height: 8px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #16a34a, #84cc16);
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 680px) {
+      .hero-title {
+        font-size: 2.1rem;
+      }
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+      .room-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .share-link-box {
+        max-width: 100%;
+      }
+      .arena-stage {
+        height: 320px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Top Nav Header -->
+    <header>
+      <div class="logo-area">
+        <div class="logo-badge">PC</div>
+        <div class="logo-title">
+          <h1>Persona Council <span class="nav-tag">Gemma 4</span></h1>
+        </div>
+      </div>
+      <div id="nav-actions">
+        <button id="btn-new-council" class="btn btn-secondary btn-sm hidden" onclick="resetToHome()">+ New Council</button>
+      </div>
+    </header>
+
+    <!-- Error Banner -->
+    <div id="global-error" class="card hidden" style="border-color: var(--danger-red); background: var(--danger-red-bg);">
+      <div style="color: #b91c1c; font-weight: 700; font-size: 0.9rem;" id="global-error-msg"></div>
+    </div>
+
+    <!-- HOME VIEW -->
+    <div id="view-home">
+      <!-- Hero Section -->
+      <div class="hero-section">
+        <div class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          Faster Multi-Agent Consensus
+        </div>
+        <h2 class="hero-title">Empowering You to Achieve Perfect Consensus</h2>
+        <p class="hero-subtitle">Private personal AIs negotiate trade-offs, defend your dealbreakers, and converge on decisions nobody hates.</p>
+      </div>
+
+      <!-- Mode Switcher Tabs -->
+      <div class="tabs-wrapper">
+        <div class="tabs">
+          <button id="tab-solo" class="tab-btn active" onclick="switchMode('solo')">Solo Council</button>
+          <button id="tab-group" class="tab-btn" onclick="switchMode('group')">Group Room</button>
+        </div>
+      </div>
+
+      <!-- Main Config Card -->
+      <div class="card">
+        <div class="form-group">
+          <label for="input-topic">Topic or Decision to Resolve</label>
+          <textarea id="input-topic" placeholder="e.g. Which project architecture should we build for our 24h hackathon?"></textarea>
+          
+          <div class="presets-row">
+            <span style="font-size: 0.74rem; color: var(--text-dim); text-transform: uppercase; font-weight: 800;">Quick Presets:</span>
+            <span class="preset-pill" onclick="setPreset('hackathon')">🚀 Hackathon MVP Scope</span>
+            <span class="preset-pill" onclick="setPreset('apartment')">🏢 Roommate Apartment Lease</span>
+            <span class="preset-pill" onclick="setPreset('dinner')">🍕 Team Dinner Choice</span>
+          </div>
+        </div>
+
+        <!-- Solo Mode Section -->
+        <div id="section-solo">
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label style="margin: 0;">Council Personalities</label>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="addPersonaRow()">+ Add Persona</button>
+            </div>
+            <div id="personas-container">
+              <!-- Default Personas -->
+              <div class="persona-row">
+                <input type="text" class="persona-name" value="Optimist" placeholder="Name" style="max-width: 140px;">
+                <input type="text" class="persona-profile" value="Focus on maximum upside, creative opportunities, bold ideas, high growth potential." placeholder="Perspective / personality">
+                <button type="button" class="btn-remove" onclick="removePersonaRow(this)" title="Remove">✕</button>
+              </div>
+              <div class="persona-row">
+                <input type="text" class="persona-name" value="Skeptic" placeholder="Name" style="max-width: 140px;">
+                <input type="text" class="persona-profile" value="Challenge assumptions, identify fatal flaws, security risks, failure modes, cost overruns." placeholder="Perspective / personality">
+                <button type="button" class="btn-remove" onclick="removePersonaRow(this)" title="Remove">✕</button>
+              </div>
+              <div class="persona-row">
+                <input type="text" class="persona-name" value="Pragmatist" placeholder="Name" style="max-width: 140px;">
+                <input type="text" class="persona-profile" value="Focus on practical execution, 8h feasibility, clean delivery, minimal dependencies." placeholder="Perspective / personality">
+                <button type="button" class="btn-remove" onclick="removePersonaRow(this)" title="Remove">✕</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Group Mode Section -->
+        <div id="section-group" class="hidden">
+          <div style="background: var(--bg-card-subtle); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; margin-bottom: 20px;">
+            <p style="font-size: 0.92rem; color: var(--text-main); font-weight: 600; margin-bottom: 4px;">
+              🔒 100% Sealed Private Profiles
+            </p>
+            <p style="font-size: 0.84rem; color: var(--text-muted); line-height: 1.5;">
+              Create a room and share the 4-character code. Each participant inputs dealbreakers on their phone. Other agents only see compact claims, never raw notes.
+            </p>
+          </div>
+        </div>
+
+        <!-- Baseline Checkbox -->
+        <label class="checkbox-group">
+          <input type="checkbox" id="check-baseline" checked>
+          <span>Compare outcome against single-call baseline LLM (measures consensus quality &amp; token delta)</span>
+        </label>
+
+        <!-- Submit Button -->
+        <button id="btn-submit-home" class="btn" onclick="submitHome()">
+          <span>Start Solo Council</span>
+          <span class="arrow-icon">↗</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ROOM / COUNCIL VIEW -->
+    <div id="view-room" class="hidden">
+      <!-- Header Room Code & Share Box -->
+      <div class="room-header">
+        <div>
+          <span style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: 800;">Room Code</span>
+          <div id="room-code-display" class="room-code-tag">----</div>
+        </div>
+        <div class="share-link-box">
+          <input type="text" id="share-link-input" class="share-link-input" readonly>
+          <button class="btn btn-secondary btn-sm" onclick="copyShareLink()">Copy Link</button>
+        </div>
+      </div>
+
+      <!-- Topic Card -->
+      <div class="card" style="padding: 18px 22px;">
+        <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-dim); font-weight: 800; letter-spacing: 0.06em;">Topic Under Consideration</span>
+        <h2 id="room-topic-text" style="font-size: 1.25rem; margin-top: 4px; font-weight: 800; letter-spacing: -0.02em;"></h2>
+      </div>
+
+      <!-- Lobby: Members & Join Form -->
+      <div id="lobby-card" class="card">
+        <div class="card-title">
+          <span>Participants (<span id="member-count">0</span>/8)</span>
+          <span id="lobby-status-pill" class="chip chip-primary">Waiting for Quorum</span>
+        </div>
+        <div id="member-chips" class="chips-container"></div>
+
+        <!-- Join Form -->
+        <div id="join-form-wrapper" style="margin-top: 18px; border-top: 1px solid var(--border-subtle); padding-top: 18px;">
+          <h4 style="font-size: 1rem; margin-bottom: 12px; font-weight: 800;">Join This Council Room</h4>
+          <div class="form-group">
+            <label for="join-name">Your Name</label>
+            <input type="text" id="join-name" placeholder="e.g. Alex">
+          </div>
+          <div class="form-group">
+            <label for="join-must-haves">Must-Haves (Non-negotiable)</label>
+            <input type="text" id="join-must-haves" placeholder="e.g. Budget under $50/mo, zero latency hit">
+          </div>
+          <div class="form-group">
+            <label for="join-dealbreakers">Dealbreakers (Will reject)</label>
+            <input type="text" id="join-dealbreakers" placeholder="e.g. Proprietary vendor lock-in, complex setup">
+          </div>
+          <div class="form-group">
+            <label for="join-constraints">Constraints</label>
+            <input type="text" id="join-constraints" placeholder="e.g. Must finish in 8 hours, Python stack only">
+          </div>
+          <div class="form-group">
+            <label for="join-flexible">Flexible On</label>
+            <input type="text" id="join-flexible" placeholder="e.g. UI framework, specific cloud host">
+          </div>
+          <button class="btn btn-secondary" onclick="submitJoin()">Join Room as Personal AI</button>
+        </div>
+
+        <div id="joined-status-msg" class="chip chip-success hidden" style="margin-top: 12px;">
+          ✓ You have joined this council room
+        </div>
+
+        <div id="start-btn-container" style="margin-top: 20px;">
+          <button id="btn-start-council" class="btn" onclick="startCouncil()" disabled>
+            <span>Start Council (Requires ≥ 2 Participants)</span>
+            <span class="arrow-icon">↗</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Council Execution Area -->
+      <div id="council-live-area" class="hidden">
+        <!-- Status Banner -->
+        <div class="status-banner">
+          <div>
+            <span class="pulse-dot"></span>
+            <span id="live-stage-name">Initializing...</span>
+          </div>
+          <div id="stop-reason-badge" class="chip chip-success hidden"></div>
+        </div>
+
+        <!-- ==========================================================
+             VISUAL DEBATE ARENA (Animated Red / Green Agreement Graph)
+             ========================================================== -->
+        <div class="arena-container" id="card-arena">
+          <div class="arena-header">
+            <div class="arena-title-box">
+              <h3><span>✦</span> Visual Consensus Arena</h3>
+              <p>Real-time neural map of AI arguments, frictions, and consensus</p>
+            </div>
+            <div class="arena-legend">
+              <div class="legend-item">
+                <span class="legend-bar-green"></span>
+                <span>Agreement / Alignment</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-bar-red"></span>
+                <span>Dispute / Critique</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="arena-stage" id="arena-stage">
+            <svg id="arena-svg"></svg>
+            <div class="arena-core" id="arena-core">
+              <span class="arena-core-icon">⚖️</span>
+              <span class="arena-core-label">Consensus</span>
+            </div>
+            <div class="arena-nodes-layer" id="arena-nodes-layer"></div>
+          </div>
+
+          <div class="arena-inspector" id="arena-inspector">
+            <span id="arena-inspector-text">Hover or click any agent or relationship line to view live tension details.</span>
+            <span id="arena-friction-pill" class="chip chip-primary" style="font-size: 0.75rem;">Evaluating Alignment</span>
+          </div>
+        </div>
+
+        <!-- 1. Proposals -->
+        <div id="card-proposals" class="card hidden">
+          <div class="card-title">
+            <span>1. Agent Compact Proposals</span>
+            <span class="chip chip-primary" style="font-size: 0.75rem;">Fast Model • ≤20 Words</span>
+          </div>
+          <div id="proposals-list" class="proposals-grid"></div>
+        </div>
+
+        <!-- 2. Disagreement Check -->
+        <div id="card-check" class="card hidden">
+          <div class="card-title">
+            <span>2. Disagreement Analysis</span>
+            <div id="check-result-chip" class="chip"></div>
+          </div>
+          <p id="check-dispute-text" style="font-size: 0.92rem; color: var(--text-muted); font-weight: 600;"></p>
+        </div>
+
+        <!-- 3. Critiques & Compromises -->
+        <div id="card-critiques" class="card hidden">
+          <div class="card-title">
+            <span>3. Cross-Examination &amp; Compromises</span>
+            <span class="chip chip-warning" style="font-size: 0.75rem;">Conditional Stage</span>
+          </div>
+          <div id="critiques-list"></div>
+        </div>
+
+        <!-- 4 & 5. Rounds & Verdicts -->
+        <div id="card-rounds" class="card hidden">
+          <div class="card-title">
+            <span>4 &amp; 5. Moderator Verdict &amp; Stakeholder Ratings</span>
+            <span class="chip chip-success" style="font-size: 0.75rem;">Strong + Fast Models</span>
+          </div>
+          <div id="rounds-list"></div>
+        </div>
+
+        <!-- 7. Baseline Comparison Card -->
+        <div id="card-comparison" class="card hidden">
+          <div class="card-title">
+            <span>Council vs. Single-Call Baseline</span>
+            <span class="chip chip-primary" style="font-size: 0.75rem;">Benchmark</span>
+          </div>
+          <div class="comparison-grid">
+            <div class="comp-col highlight">
+              <div class="comp-title" style="color: #15803d;">Persona Council (Consensus)</div>
+              <div class="stat-row"><span>Lowest Score:</span> <span id="comp-council-lowest" class="stat-val">-</span></div>
+              <div class="stat-row"><span>Average Score:</span> <span id="comp-council-avg" class="stat-val">-</span></div>
+              <div class="stat-row"><span>Rounds Taken:</span> <span id="comp-council-rounds" class="stat-val">1</span></div>
+            </div>
+            <div class="comp-col">
+              <div class="comp-title" style="color: var(--text-muted);">Plain Single Call (Gemma Strong)</div>
+              <div class="stat-row"><span>Lowest Score:</span> <span id="comp-base-lowest" class="stat-val">-</span></div>
+              <div class="stat-row"><span>Average Score:</span> <span id="comp-base-avg" class="stat-val">-</span></div>
+              <div class="stat-row"><span>Rounds Taken:</span> <span class="stat-val">1</span></div>
+            </div>
+          </div>
+          <details>
+            <summary>View Plain Single-Call Response</summary>
+            <div id="baseline-text-box" style="margin-top: 10px; font-size: 0.88rem; white-space: pre-wrap; color: var(--text-muted); line-height: 1.6;"></div>
+          </details>
+          <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 10px;">
+            * Note: Scores originate from each agent's evaluation using the fast model, providing an indicative benchmark of individual stakeholder happiness.
+          </p>
+        </div>
+
+        <!-- Token Usage Accounting -->
+        <div id="card-tokens" class="card hidden">
+          <div class="card-title">
+            <span>Token Budget &amp; Stage Breakdown</span>
+            <span id="token-budget-pill" class="chip chip-primary" style="font-size: 0.78rem;">0 / 25,000</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div id="token-progress-fill" class="progress-bar-fill" style="width: 0%;"></div>
+          </div>
+          <div class="token-table-wrap">
+            <table id="token-table">
+              <thead>
+                <tr>
+                  <th>Pipeline Stage</th>
+                  <th>Calls</th>
+                  <th>Input</th>
+                  <th>Output (incl. thoughts)</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody id="token-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentMode = 'solo';
+    let currentSessionId = null;
+    let pollInterval = null;
+    let isPollingActive = false;
+    let lastRenderedState = null;
+
+    // Utility: HTML Escaping
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function showError(msg) {
+      const banner = document.getElementById('global-error');
+      const text = document.getElementById('global-error-msg');
+      if (msg) {
+        text.innerText = msg;
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+      document.getElementById('tab-solo').classList.toggle('active', mode === 'solo');
+      document.getElementById('tab-group').classList.toggle('active', mode === 'group');
+      document.getElementById('section-solo').classList.toggle('hidden', mode !== 'solo');
+      document.getElementById('section-group').classList.toggle('hidden', mode !== 'group');
+      const submitText = mode === 'solo' ? 'Start Solo Council' : 'Create Group Room';
+      document.getElementById('btn-submit-home').innerHTML = `<span>${submitText}</span><span class="arrow-icon">↗</span>`;
+    }
+
+    function setPreset(type) {
+      const topicInput = document.getElementById('input-topic');
+      if (type === 'hackathon') {
+        topicInput.value = "What is the optimal MVP architecture for an 8-hour AI hackathon: complex multi-agent orchestrator or a focused 4-file Flask + vanilla JS app?";
+      } else if (type === 'apartment') {
+        topicInput.value = "Which apartment should our 3 roommates lease: a $3,200/mo modern 3BR next to transit with no yard, or a $2,700/mo older house with a yard 30 mins away?";
+      } else if (type === 'dinner') {
+        topicInput.value = "Where should our 4-person team eat celebration dinner: vegan-friendly tapas, a high-end steakhouse, or casual street food market?";
+      }
+    }
+
+    function addPersonaRow() {
+      const container = document.getElementById('personas-container');
+      const div = document.createElement('div');
+      div.className = 'persona-row';
+      div.innerHTML = `
+        <input type="text" class="persona-name" placeholder="Name" style="max-width: 140px;">
+        <input type="text" class="persona-profile" placeholder="Perspective / personality">
+        <button type="button" class="btn-remove" onclick="removePersonaRow(this)" title="Remove">✕</button>
+      `;
+      container.appendChild(div);
+    }
+
+    function removePersonaRow(btn) {
+      const container = document.getElementById('personas-container');
+      if (container.children.length <= 2) {
+        alert("At least 2 personas are required for a council.");
+        return;
+      }
+      btn.parentElement.remove();
+    }
+
+    function resetToHome() {
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = null;
+      isPollingActive = false;
+      currentSessionId = null;
+      window.history.pushState({}, document.title, window.location.pathname);
+      document.getElementById('view-home').classList.remove('hidden');
+      document.getElementById('view-room').classList.add('hidden');
+      document.getElementById('btn-new-council').classList.add('hidden');
+      showError('');
+    }
+
+    async function submitHome() {
+      showError('');
+      const topic = document.getElementById('input-topic').value.trim();
+      if (!topic) {
+        showError('Please enter a topic or decision to resolve.');
+        return;
+      }
+      const wantBaseline = document.getElementById('check-baseline').checked;
+
+      let payload = {
+        mode: currentMode,
+        topic: topic,
+        want_baseline: wantBaseline
+      };
+
+      if (currentMode === 'solo') {
+        const rows = document.querySelectorAll('#personas-container .persona-row');
+        const agents = [];
+        for (const r of rows) {
+          const name = r.querySelector('.persona-name').value.trim();
+          const profile = r.querySelector('.persona-profile').value.trim();
+          if (!name) {
+            showError('All personas must have a name.');
+            return;
+          }
+          agents.push({ name, profile });
+        }
+        if (agents.length < 2) {
+          showError('At least 2 personas required.');
+          return;
+        }
+        payload.agents = agents;
+      }
+
+      const submitBtn = document.getElementById('btn-submit-home');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<span>Creating Council...</span>`;
+
+      try {
+        const resp = await fetch('/api/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          showError(data.error || 'Failed to create council.');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `<span>${currentMode === 'solo' ? 'Start Solo Council' : 'Create Group Room'}</span><span class="arrow-icon">↗</span>`;
+          return;
+        }
+
+        openRoom(data.id);
+      } catch (err) {
+        showError('Network error creating session: ' + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<span>${currentMode === 'solo' ? 'Start Solo Council' : 'Create Group Room'}</span><span class="arrow-icon">↗</span>`;
+      }
+    }
+
+    function openRoom(sessionId) {
+      currentSessionId = sessionId;
+      document.getElementById('view-home').classList.add('hidden');
+      document.getElementById('view-room').classList.remove('hidden');
+      document.getElementById('btn-new-council').classList.remove('hidden');
+
+      const url = new URL(window.location.href);
+      url.searchParams.set('room', sessionId);
+      window.history.pushState({}, '', url.toString());
+
+      document.getElementById('room-code-display').innerText = sessionId;
+      document.getElementById('share-link-input').value = url.toString();
+
+      try {
+        const joinedName = sessionStorage.getItem('pc_joined_' + sessionId);
+        if (joinedName) {
+          document.getElementById('join-form-wrapper').classList.add('hidden');
+          const msg = document.getElementById('joined-status-msg');
+          msg.innerText = `✓ Joined as ${joinedName}`;
+          msg.classList.remove('hidden');
+        } else {
+          document.getElementById('join-form-wrapper').classList.remove('hidden');
+          document.getElementById('joined-status-msg').classList.add('hidden');
+        }
+      } catch (e) {
+        console.warn('SessionStorage unavailable', e);
+      }
+
+      fetchState();
+      if (!pollInterval) {
+        pollInterval = setInterval(fetchState, 1500);
+      }
+    }
+
+    function copyShareLink() {
+      const input = document.getElementById('share-link-input');
+      input.select();
+      input.setSelectionRange(0, 99999);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(input.value);
+      } else {
+        document.execCommand('copy');
+      }
+      const btn = document.querySelector('.share-link-box button');
+      if (btn) {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.borderColor = 'var(--accent-green)';
+        btn.style.color = '#15803d';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.borderColor = '';
+          btn.style.color = '';
+        }, 2000);
+      }
+    }
+
+    async function submitJoin() {
+      showError('');
+      if (!currentSessionId) return;
+
+      const name = document.getElementById('join-name').value.trim();
+      const mustHaves = document.getElementById('join-must-haves').value.trim();
+      const dealbreakers = document.getElementById('join-dealbreakers').value.trim();
+      const constraints = document.getElementById('join-constraints').value.trim();
+      const flexibleOn = document.getElementById('join-flexible').value.trim();
+
+      if (!name) {
+        showError('Please enter your name.');
+        return;
+      }
+
+      try {
+        const resp = await fetch(`/api/session/${currentSessionId}/join`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            must_haves: mustHaves,
+            dealbreakers,
+            constraints,
+            flexible_on: flexibleOn
+          })
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          showError(data.error || 'Failed to join room.');
+          return;
+        }
+
+        try {
+          sessionStorage.setItem('pc_joined_' + currentSessionId, name);
+        } catch (e) {}
+
+        document.getElementById('join-form-wrapper').classList.add('hidden');
+        const msg = document.getElementById('joined-status-msg');
+        msg.innerText = `✓ Joined as ${name}`;
+        msg.classList.remove('hidden');
+
+        fetchState();
+      } catch (err) {
+        showError('Network error joining room: ' + err.message);
+      }
+    }
+
+    async function startCouncil() {
+      showError('');
+      if (!currentSessionId) return;
+
+      const startBtn = document.getElementById('btn-start-council');
+      startBtn.disabled = true;
+      startBtn.innerHTML = `<span>Starting Council...</span>`;
+
+      try {
+        const resp = await fetch(`/api/session/${currentSessionId}/start`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          showError(data.error || 'Failed to start council.');
+          startBtn.disabled = false;
+          startBtn.innerHTML = `<span>Start Council</span><span class="arrow-icon">↗</span>`;
+          return;
+        }
+        fetchState();
+      } catch (err) {
+        showError('Network error starting council: ' + err.message);
+        startBtn.disabled = false;
+      }
+    }
+
+    async function fetchState() {
+      if (!currentSessionId) return;
+      try {
+        const resp = await fetch(`/api/session/${currentSessionId}`);
+        if (!resp.ok) {
+          if (resp.status === 404) {
+            showError('Room not found or expired.');
+            if (pollInterval) clearInterval(pollInterval);
+          }
+          return;
+        }
+        const state = await resp.json();
+        lastRenderedState = state;
+        renderState(state);
+      } catch (err) {
+        console.warn('Polling error:', err);
+      }
+    }
+
+    // ====================================================================
+    // RENDER STATE & DRAW VISUAL ARENA
+    // ====================================================================
+    function renderState(state) {
+      document.getElementById('room-topic-text').innerText = state.topic || '';
+
+      const memberCount = (state.agents || []).length;
+      document.getElementById('member-count').innerText = memberCount;
+      const chipsBox = document.getElementById('member-chips');
+      chipsBox.innerHTML = (state.agents || []).map(a => `<span class="chip chip-primary">👤 ${escapeHtml(a.name)}</span>`).join('');
+
+      const startBtn = document.getElementById('btn-start-council');
+      if (startBtn) {
+        if (memberCount >= 2 && state.status === 'lobby') {
+          startBtn.disabled = false;
+          startBtn.innerHTML = `<span>Start Council with ${memberCount} Participants</span><span class="arrow-icon">↗</span>`;
+        } else if (state.status === 'lobby') {
+          startBtn.disabled = true;
+          startBtn.innerHTML = `<span>Start Council (Need at least 2 participants)</span>`;
+        }
+      }
+
+      if (state.status !== 'lobby') {
+        document.getElementById('lobby-card').classList.add('hidden');
+        document.getElementById('council-live-area').classList.remove('hidden');
+      } else {
+        document.getElementById('lobby-card').classList.remove('hidden');
+        document.getElementById('council-live-area').classList.add('hidden');
+      }
+
+      const stageName = document.getElementById('live-stage-name');
+      stageName.innerText = state.stage || state.status;
+
+      if (state.status === 'error') {
+        showError('Council Pipeline Error: ' + (state.error || 'Unknown failure'));
+        if (pollInterval) clearInterval(pollInterval);
+        return;
+      }
+
+      if (state.status === 'done') {
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = null;
+      }
+
+      const stopReasonPill = document.getElementById('stop-reason-badge');
+      if (state.stop_reason) {
+        stopReasonPill.innerText = state.stop_reason;
+        stopReasonPill.classList.remove('hidden');
+      } else {
+        stopReasonPill.classList.add('hidden');
+      }
+
+      // Draw Visual Arena
+      drawConsensusArena(state);
+
+      // 1. Proposals
+      const claims = state.claims || {};
+      const claimsKeys = Object.keys(claims);
+      const cardProposals = document.getElementById('card-proposals');
+      if (claimsKeys.length > 0) {
+        cardProposals.classList.remove('hidden');
+        const list = document.getElementById('proposals-list');
+        list.innerHTML = claimsKeys.map(name => {
+          const c = claims[name];
+          const pts = (c.points || []).map(p => `<li>${escapeHtml(p)}</li>`).join('');
+          const rs = (c.risks || []).map(r => `<li>⚠️ ${escapeHtml(r)}</li>`).join('');
+          return `
+            <div class="proposal-card">
+              <div class="proposal-author">${escapeHtml(name)}</div>
+              <div class="proposal-position">"${escapeHtml(c.position)}"</div>
+              ${pts ? `<ul class="proposal-list">${pts}</ul>` : ''}
+              ${rs ? `<ul class="proposal-list">${rs}</ul>` : ''}
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 2. Disagreement check
+      const check = state.check;
+      const cardCheck = document.getElementById('card-check');
+      if (check) {
+        cardCheck.classList.remove('hidden');
+        const chip = document.getElementById('check-result-chip');
+        const text = document.getElementById('check-dispute-text');
+        if (check.agree) {
+          chip.className = 'chip chip-success';
+          chip.innerText = 'AGREE (Harmonious)';
+          text.innerText = 'Agents found strong baseline alignment across their initial positions.';
+        } else {
+          chip.className = 'chip chip-danger';
+          chip.innerText = 'DISAGREE (Friction Detected)';
+          text.innerText = check.dispute ? `Core tension: "${check.dispute}"` : (check.raw || '');
+        }
+      }
+
+      // 3. Critiques
+      const critiques = state.critiques || [];
+      const cardCritiques = document.getElementById('card-critiques');
+      if (critiques.length > 0) {
+        cardCritiques.classList.remove('hidden');
+        const cList = document.getElementById('critiques-list');
+        cList.innerHTML = critiques.map(c => `
+          <div class="critique-card">
+            <div class="critique-header">
+              <span>⚠️ Tension:</span>
+              <strong>${escapeHtml(c.author)}</strong> ➔ <strong>${escapeHtml(c.target)}</strong>
+            </div>
+            <div><strong>Flaw Identified:</strong> ${escapeHtml(c.flaw)}</div>
+            <div style="color: #15803d; font-weight: 600; margin-top: 4px;"><strong>Proposed Compromise:</strong> ${escapeHtml(c.fix)}</div>
+          </div>
+        `).join('');
+      }
+
+      // 4 & 5. Rounds & Verdicts
+      const rounds = state.rounds || [];
+      const cardRounds = document.getElementById('card-rounds');
+      if (rounds.length > 0) {
+        cardRounds.classList.remove('hidden');
+        const rList = document.getElementById('rounds-list');
+        rList.innerHTML = rounds.map((r, idx) => {
+          const isLatest = idx === rounds.length - 1;
+          const ratings = r.ratings || {};
+          const rKeys = Object.keys(ratings);
+          const scores = rKeys.map(k => ratings[k].score || 3);
+          const lowest = scores.length ? Math.min(...scores) : '-';
+          const avg = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : '-';
+
+          const parsedVerdict = formatVerdictHtml(r.verdict);
+
+          const ratingBadges = rKeys.map(name => {
+            const item = ratings[name];
+            const sc = item.score || 3;
+            let cls = 'score-amber';
+            if (sc >= 4) cls = 'score-green';
+            if (sc <= 2) cls = 'score-red';
+            return `
+              <div class="rating-badge ${cls}">
+                <div class="rating-name">
+                  <span>${escapeHtml(name)}</span>
+                  <span>${sc}/5</span>
+                </div>
+                <div class="rating-reason">${escapeHtml(item.reason || '')}</div>
+              </div>
+            `;
+          }).join('');
+
+          return `
+            <div class="round-container">
+              <div class="round-title">
+                <span>Round ${idx + 1} ${isLatest && state.status === 'done' ? '(Final Consensus)' : ''}</span>
+                <span style="font-size: 0.84rem; color: var(--text-muted);">Lowest: <strong>${lowest}/5</strong> | Avg: <strong>${avg}/5</strong></span>
+              </div>
+              <div class="verdict-box">${parsedVerdict}</div>
+              <div style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-top: 10px; letter-spacing: 0.05em;">Stakeholder Satisfaction Ratings:</div>
+              <div class="ratings-row">${ratingBadges}</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 7. Comparison Card
+      const baseline = state.baseline;
+      const cardComparison = document.getElementById('card-comparison');
+      if (baseline && rounds.length > 0) {
+        cardComparison.classList.remove('hidden');
+        const finalRound = rounds[rounds.length - 1];
+        const finalRatings = finalRound.ratings || {};
+        const fScores = Object.values(finalRatings).map(r => r.score || 3);
+        const fLowest = fScores.length ? Math.min(...fScores) : '-';
+        const fAvg = fScores.length ? (fScores.reduce((a, b) => a + b, 0) / fScores.length).toFixed(1) : '-';
+
+        const bRatings = baseline.ratings || {};
+        const bScores = Object.values(bRatings).map(r => r.score || 3);
+        const bLowest = bScores.length ? Math.min(...bScores) : '-';
+        const bAvg = bScores.length ? (bScores.reduce((a, b) => a + b, 0) / bScores.length).toFixed(1) : '-';
+
+        document.getElementById('comp-council-lowest').innerText = `${fLowest} / 5`;
+        document.getElementById('comp-council-avg').innerText = `${fAvg} / 5`;
+        document.getElementById('comp-council-rounds').innerText = rounds.length;
+
+        document.getElementById('comp-base-lowest').innerText = `${bLowest} / 5`;
+        document.getElementById('comp-base-avg').innerText = `${bAvg} / 5`;
+
+        document.getElementById('baseline-text-box').innerText = baseline.text || '';
+      }
+
+      // Token Table
+      const usage = state.usage || {};
+      const usageKeys = Object.keys(usage);
+      const cardTokens = document.getElementById('card-tokens');
+      if (usageKeys.length > 0) {
+        cardTokens.classList.remove('hidden');
+        const tbody = document.getElementById('token-table-body');
+        let councilIn = 0;
+        let councilOut = 0;
+        let councilCalls = 0;
+        let baseIn = 0;
+        let baseOut = 0;
+        let baseCalls = 0;
+
+        let rowsHtml = '';
+        for (const stage of usageKeys) {
+          const u = usage[stage];
+          const total = (u.in || 0) + (u.out || 0);
+          if (stage.startsWith('Baseline')) {
+            baseCalls += (u.calls || 0);
+            baseIn += (u.in || 0);
+            baseOut += (u.out || 0);
+          } else {
+            councilCalls += (u.calls || 0);
+            councilIn += (u.in || 0);
+            councilOut += (u.out || 0);
+          }
+          rowsHtml += `
+            <tr>
+              <td>${escapeHtml(stage)}</td>
+              <td>${u.calls || 0}</td>
+              <td>${(u.in || 0).toLocaleString()}</td>
+              <td>${(u.out || 0).toLocaleString()}</td>
+              <td><strong>${total.toLocaleString()}</strong></td>
+            </tr>
+          `;
+        }
+
+        const councilTotal = councilIn + councilOut;
+        const baseTotal = baseIn + baseOut;
+
+        rowsHtml += `
+          <tr class="highlight-row">
+            <td>Council Total (Counted vs. Budget)</td>
+            <td>${councilCalls}</td>
+            <td>${councilIn.toLocaleString()}</td>
+            <td>${councilOut.toLocaleString()}</td>
+            <td>${councilTotal.toLocaleString()}</td>
+          </tr>
+        `;
+
+        if (baseCalls > 0) {
+          rowsHtml += `
+            <tr style="color: var(--text-muted); font-weight: 600;">
+              <td>Baseline Total (Excluded from Budget)</td>
+              <td>${baseCalls}</td>
+              <td>${baseIn.toLocaleString()}</td>
+              <td>${baseOut.toLocaleString()}</td>
+              <td>${baseTotal.toLocaleString()}</td>
+            </tr>
+          `;
+        }
+        tbody.innerHTML = rowsHtml;
+
+        const budget = state.token_budget || 25000;
+        document.getElementById('token-budget-pill').innerText = `${councilTotal.toLocaleString()} / ${budget.toLocaleString()} tokens`;
+        const pct = Math.min(100, Math.round((councilTotal / budget) * 100));
+        document.getElementById('token-progress-fill').style.width = pct + '%';
+      }
+    }
+
+    // ====================================================================
+    // DRAW DYNAMIC CONSENSUS ARENA
+    // ====================================================================
+    function drawConsensusArena(state) {
+      const stage = document.getElementById('arena-stage');
+      const svg = document.getElementById('arena-svg');
+      const nodesLayer = document.getElementById('arena-nodes-layer');
+      const frictionPill = document.getElementById('arena-friction-pill');
+      const inspectorText = document.getElementById('arena-inspector-text');
+
+      const width = stage.clientWidth || 700;
+      const height = stage.clientHeight || 380;
+      const cx = width / 2;
+      const cy = height / 2;
+
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+      svg.innerHTML = '';
+      nodesLayer.innerHTML = '';
+
+      const agents = state.agents || [];
+      if (agents.length === 0) return;
+
+      const rounds = state.rounds || [];
+      const latestRound = rounds.length > 0 ? rounds[rounds.length - 1] : null;
+      const latestRatings = latestRound ? (latestRound.ratings || {}) : {};
+
+      const radius = Math.min(width, height) * 0.38;
+      const nodePositions = {};
+
+      // Place agents in circular orbit
+      agents.forEach((ag, idx) => {
+        const angle = (2 * Math.PI * idx) / agents.length - Math.PI / 2;
+        const x = cx + radius * Math.cos(angle);
+        const y = cy + radius * Math.sin(angle);
+        nodePositions[ag.name] = { x, y };
+
+        const rInfo = latestRatings[ag.name] || {};
+        const score = rInfo.score || null;
+        let scoreCls = '';
+        if (score !== null) {
+          if (score >= 4) scoreCls = 'score-green';
+          else if (score === 3) scoreCls = 'score-amber';
+          else scoreCls = 'score-red';
+        }
+
+        const initial = ag.name ? ag.name.charAt(0).toUpperCase() : '?';
+        const nodeDiv = document.createElement('div');
+        nodeDiv.className = 'agent-node';
+        nodeDiv.style.left = `${x}px`;
+        nodeDiv.style.top = `${y}px`;
+        nodeDiv.innerHTML = `
+          <div class="agent-node-avatar">${initial}</div>
+          <span class="agent-node-name">${escapeHtml(ag.name)}</span>
+          ${score !== null ? `<span class="agent-node-score ${scoreCls}">${score}/5</span>` : ''}
+        `;
+
+        nodeDiv.onclick = () => {
+          const claim = (state.claims || {})[ag.name];
+          if (claim) {
+            inspectorText.innerHTML = `<strong>${escapeHtml(ag.name)}:</strong> "${escapeHtml(claim.position)}" (Rating: ${score ? score + '/5' : 'Pending'})`;
+          } else {
+            inspectorText.innerText = `${ag.name} is evaluating options...`;
+          }
+        };
+
+        nodesLayer.appendChild(nodeDiv);
+      });
+
+      // Analyze Relationships: Critiques (Red) & Agreement (Green)
+      let svgLinesHtml = '';
+      const critiques = state.critiques || [];
+      const check = state.check;
+      let hasRedLines = false;
+      let hasGreenLines = false;
+
+      // 1. Draw Red Dashed Lines for Critiques
+      critiques.forEach(crit => {
+        const fromPos = nodePositions[crit.author];
+        const toPos = nodePositions[crit.target];
+        if (fromPos && toPos) {
+          hasRedLines = true;
+          svgLinesHtml += `
+            <line x1="${fromPos.x}" y1="${fromPos.y}" x2="${toPos.x}" y2="${toPos.y}" class="svg-line-red" />
+          `;
+        }
+      });
+
+      // 2. Disagreement Check: if DISAGREE and no direct critiques yet, draw red web
+      if (check && !check.agree && critiques.length === 0) {
+        hasRedLines = true;
+        for (let i = 0; i < agents.length; i++) {
+          for (let j = i + 1; j < agents.length; j++) {
+            const p1 = nodePositions[agents[i].name];
+            const p2 = nodePositions[agents[j].name];
+            if (p1 && p2) {
+              svgLinesHtml += `
+                <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" class="svg-line-red" />
+              `;
+            }
+          }
+        }
+      }
+
+      // 3. Green Consensus Lines:
+      // If agreed, or when satisfaction check passes (scores >= 4), connect agents to central core!
+      if (check && check.agree) {
+        hasGreenLines = true;
+        agents.forEach(ag => {
+          const pos = nodePositions[ag.name];
+          if (pos) {
+            svgLinesHtml += `
+              <line x1="${pos.x}" y1="${pos.y}" x2="${cx}" y2="${cy}" class="svg-line-green" />
+            `;
+          }
+        });
+      }
+
+      if (latestRound) {
+        agents.forEach(ag => {
+          const pos = nodePositions[ag.name];
+          const sc = (latestRatings[ag.name] || {}).score || 3;
+          if (pos) {
+            if (sc >= 4) {
+              hasGreenLines = true;
+              svgLinesHtml += `
+                <line x1="${pos.x}" y1="${pos.y}" x2="${cx}" y2="${cy}" class="svg-line-green" />
+              `;
+            } else {
+              hasRedLines = true;
+              svgLinesHtml += `
+                <line x1="${pos.x}" y1="${pos.y}" x2="${cx}" y2="${cy}" class="svg-line-red" />
+              `;
+            }
+          }
+        });
+      }
+
+      svg.innerHTML = svgLinesHtml;
+
+      // Update Arena Status Pill
+      if (state.status === 'done') {
+        frictionPill.className = 'chip chip-success';
+        frictionPill.innerText = 'Consensus Unified ✓';
+        inspectorText.innerHTML = `<strong>All participants aligned:</strong> Final outcome reached with zero blocking dealbreakers.`;
+      } else if (hasRedLines && hasGreenLines) {
+        frictionPill.className = 'chip chip-warning';
+        frictionPill.innerText = 'Resolving Tensions';
+        inspectorText.innerHTML = `<strong>Tension detected:</strong> Red lines highlight critiques; compromises are converging toward green consensus.`;
+      } else if (hasRedLines) {
+        frictionPill.className = 'chip chip-danger';
+        frictionPill.innerText = 'Active Debate (Friction)';
+        inspectorText.innerHTML = check?.dispute ? `<strong>Friction:</strong> "${escapeHtml(check.dispute)}"` : 'Agents are actively cross-examining arguments.';
+      } else if (hasGreenLines) {
+        frictionPill.className = 'chip chip-success';
+        frictionPill.innerText = 'Harmonious Convergence';
+        inspectorText.innerText = 'Positions are harmonious. Moderator synthesizing balanced verdict.';
+      } else {
+        frictionPill.className = 'chip chip-primary';
+        frictionPill.innerText = 'Agents Formulating Claims';
+      }
+    }
+
+    // Format structured verdict
+    function formatVerdictHtml(raw) {
+      if (!raw) return '';
+      const lines = raw.split('\n');
+      let html = '';
+      let currentLabel = '';
+      let currentContent = [];
+
+      for (const line of lines) {
+        const match = line.match(/^(DECISION|WHY|TRADE-OFFS|FIRST STEP)\s*:\s*(.*)/i);
+        if (match) {
+          if (currentLabel) {
+            html += `
+              <div class="verdict-section">
+                <div class="verdict-label">${escapeHtml(currentLabel)}</div>
+                <div class="verdict-content">${escapeHtml(currentContent.join('\n'))}</div>
+              </div>
+            `;
+          }
+          currentLabel = match[1].toUpperCase();
+          currentContent = [match[2]];
+        } else {
+          currentContent.push(line);
+        }
+      }
+
+      if (currentLabel) {
+        html += `
+          <div class="verdict-section">
+            <div class="verdict-label">${escapeHtml(currentLabel)}</div>
+            <div class="verdict-content">${escapeHtml(currentContent.join('\n'))}</div>
+          </div>
+        `;
+      } else {
+        html = `<div class="verdict-content">${escapeHtml(raw)}</div>`;
+      }
+      return html;
+    }
+
+    // Auto-load room from query parameter
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const room = params.get('room');
+      if (room) {
+        openRoom(room.trim().toUpperCase());
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (lastRenderedState) {
+        drawConsensusArena(lastRenderedState);
+      }
+    });
+  </script>
+</body>
+</html>
