@@ -1722,6 +1722,26 @@
       }
     }
 
+    async function retryCouncil() {
+      if (!currentSessionId) return;
+      showError('');
+      const stageName = document.getElementById('live-stage-name');
+      if (stageName) stageName.innerText = 'Restarting...';
+      try {
+        const resp = await fetch(`/api/session/${currentSessionId}/start`, { method: 'POST' });
+        if (resp.ok) {
+          if (pollInterval) clearInterval(pollInterval);
+          pollInterval = setInterval(fetchState, 1500);
+          fetchState();
+        } else {
+          const errData = await resp.json();
+          showError(errData.error || 'Could not restart council session');
+        }
+      } catch (err) {
+        showError('Network error trying to restart: ' + err.message);
+      }
+    }
+
     // ====================================================================
     // RENDER STATE & DRAW VISUAL ARENA
     // ====================================================================
@@ -1758,6 +1778,10 @@
       if (state.status === 'error') {
         showError('Council Pipeline Error: ' + (state.error || 'Unknown failure'));
         if (pollInterval) clearInterval(pollInterval);
+        const stageName = document.getElementById('live-stage-name');
+        if (stageName) {
+          stageName.innerHTML = `<span style="color:#ef4444">Failed</span> <button class="btn btn-secondary btn-sm" style="margin-left:8px;padding:3px 10px;font-size:0.75rem;cursor:pointer;" onclick="retryCouncil()">Retry Debate ↻</button>`;
+        }
         return;
       }
 

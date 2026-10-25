@@ -25,7 +25,7 @@ load_dotenv_simple()
 # Environment Configuration
 LLM_API_KEY = os.environ.get("LLM_API_KEY", "")
 LLM_MODEL = os.environ.get("LLM_MODEL", "gemma-4-26b-a4b-it")
-LLM_MODEL_STRONG = os.environ.get("LLM_MODEL_STRONG", "gemma-4-31b-it")
+LLM_MODEL_STRONG = os.environ.get("LLM_MODEL_STRONG", "gemma-4-26b-a4b-it")
 THINKING_LEVEL = os.environ.get("THINKING_LEVEL", "minimal")
 LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "gemini")
 LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "")
@@ -91,10 +91,21 @@ def generate_room_code():
         # Fallback 5 chars if dense
         return "".join(random.choices(ROOM_CHARS, k=5))
 
+TRANSIENT_STATUS_CODES = {408, 429, 500, 502, 503, 504}
+TRANSIENT_KEYWORDS = [
+    "500", "502", "503", "504", "429", "408", 
+    "quota", "resource_exhausted", "internal server error", 
+    "overloaded", "timeout", "timed out", "connection reset", 
+    "getaddrinfo", "connection refused", "remotely closed"
+]
+
 def extract_json(text):
     if not text:
         return None
     text_clean = text.strip()
+    fence_match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', text_clean)
+    if fence_match:
+        text_clean = fence_match.group(1).strip()
     match = re.search(r'(\{[\s\S]*\}|\[[\s\S]*\])', text_clean)
     if match:
         try:
@@ -142,7 +153,7 @@ def llm(prompt, max_tokens, temperature, model=None, api_key=None):
         out_tok = usage.get("completion_tokens", len(text) // 4)
         return text, {"in": in_tok, "out": out_tok}
     
-    # Gemini Provider (Default)
+    # Gemini / Gemma Provider (Default)
     gen_config = {
         "maxOutputTokens": max_tokens,
         "temperature": temperature
@@ -159,28 +170,52 @@ def llm(prompt, max_tokens, temperature, model=None, api_key=None):
     
     data = None
     last_err = None
-    max_tries = max(3, len(active_keys) * 2)
+    max_tries = max(4, len(active_keys) * 2)
+    current_model = model
+
     for attempt in range(max_tries):
         current_key = active_keys[attempt % len(active_keys)]
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={current_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{current_model}:generateContent?key={current_key}"
         headers = {"Content-Type": "application/json"}
         try:
             resp = requests.post(url, json=body, headers=headers, timeout=60)
-            if resp.status_code in [503, 429] and attempt < max_tries - 1:
-                time.sleep(1.0)
+            if resp.status_code in TRANSIENT_STATUS_CODES and attempt < max_tries - 1:
+                # If strong model hits 500, 503, or rate limit, immediately switch to fast model
+                if current_model == LLM_MODEL_STRONG and current_model != LLM_MODEL:
+                    print(f"Warning: {current_model} returned {resp.status_code}, falling back to {LLM_MODEL}", file=sys.stderr)
+                    current_model = LLM_MODEL
+                backoff = min(6.0, 1.0 * (1.5 ** attempt) + random.uniform(0.2, 0.6))
+                time.sleep(backoff)
                 continue
             resp.raise_for_status()
             data = resp.json()
             break
         except Exception as e:
             last_err = e
-            if attempt < max_tries - 1 and ("503" in str(e) or "429" in str(e) or "quota" in str(e).lower()):
+            err_str = str(e).lower()
+            is_transient = any(kw in err_str for kw in TRANSIENT_KEYWORDS)
+
+            # If strong model fails with any error, switch to fast model
+            if current_model == LLM_MODEL_STRONG and current_model != LLM_MODEL:
+                print(f"Warning: {current_model} error ({e}), switching to {LLM_MODEL}", file=sys.stderr)
+                current_model = LLM_MODEL
+                if attempt < max_tries - 1:
+                    time.sleep(1.0)
+                    continue
+
+            if attempt < max_tries - 1 and is_transient:
+                backoff = min(6.0, 1.0 * (1.5 ** attempt) + random.uniform(0.2, 0.6))
+                time.sleep(backoff)
+                continue
+
+            # If fast model also failed repeatedly, try backup model before giving up
+            if attempt == max_tries - 2 and current_model == LLM_MODEL:
+                alt_model = "gemma-4-31b-it" if LLM_MODEL != "gemma-4-31b-it" else "gemma-4-26b-a4b-it"
+                print(f"Notice: Trying alternative model {alt_model} as backup", file=sys.stderr)
+                current_model = alt_model
                 time.sleep(1.0)
                 continue
-            # If strong model fails with 503 or quota, fallback gracefully to fast model
-            if model == LLM_MODEL_STRONG and model != LLM_MODEL:
-                print(f"Warning: {model} unavailable, falling back to {LLM_MODEL}", file=sys.stderr)
-                return llm(prompt, max_tokens, temperature, model=LLM_MODEL, api_key=current_key)
+
             raise e
     
     if data is None:
@@ -735,7 +770,7 @@ def start_session(sid):
         if not session:
             return jsonify({"error": f"Room '{sid}' not found"}), 404
 
-        if session["status"] != "lobby":
+        if session["status"] not in ["lobby", "error"]:
             return jsonify({"error": f"Session cannot be started from status '{session['status']}'"}), 400
 
         if len(session["agents"]) < 2:
@@ -743,6 +778,7 @@ def start_session(sid):
 
         session["status"] = "running"
         session["stage"] = "Initializing"
+        session["error"] = None
 
     threading.Thread(target=run_pipeline, args=(sid,), daemon=True).start()
     return jsonify({"success": True, "room": sid, "status": "running"}), 200
