@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Persona Council — Private Multi-Agent Consensus</title>
+  <title>AI Council — Private Multi-Agent Consensus</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%230f172a'/><text y='65' font-size='50' x='50' text-anchor='middle'>⚖️</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -1101,9 +1102,9 @@
     <!-- Top Nav Header -->
     <header>
       <div class="logo-area">
-        <div class="logo-badge">PC</div>
+        <div class="logo-badge" style="font-size: 1.25rem; background: #0f172a;">⚖️</div>
         <div class="logo-title">
-          <h1>Persona Council <span class="nav-tag">Gemma 4</span></h1>
+          <h1>AI Council <span class="nav-tag">Gemma 4</span></h1>
         </div>
       </div>
       <div id="nav-actions">
@@ -1306,7 +1307,7 @@
             <svg id="arena-svg"></svg>
             <div class="arena-core" id="arena-core">
               <span class="arena-core-icon">⚖️</span>
-              <span class="arena-core-label">Consensus</span>
+              <span class="arena-core-label">AI Council</span>
             </div>
             <div class="arena-nodes-layer" id="arena-nodes-layer"></div>
           </div>
@@ -1361,7 +1362,7 @@
           </div>
           <div class="comparison-grid">
             <div class="comp-col highlight">
-              <div class="comp-title" style="color: #15803d;">Persona Council (Consensus)</div>
+              <div class="comp-title" style="color: #15803d;">AI Council (Consensus)</div>
               <div class="stat-row"><span>Lowest Score:</span> <span id="comp-council-lowest" class="stat-val">-</span></div>
               <div class="stat-row"><span>Average Score:</span> <span id="comp-council-avg" class="stat-val">-</span></div>
               <div class="stat-row"><span>Rounds Taken:</span> <span id="comp-council-rounds" class="stat-val">1</span></div>
@@ -1487,10 +1488,12 @@
       pollInterval = null;
       isPollingActive = false;
       currentSessionId = null;
-      window.history.pushState({}, document.title, window.location.pathname);
+      window.history.replaceState({}, document.title, window.location.pathname);
       document.getElementById('view-home').classList.remove('hidden');
       document.getElementById('view-room').classList.add('hidden');
       document.getElementById('btn-new-council').classList.add('hidden');
+      const roomHeader = document.querySelector('.room-header');
+      if (roomHeader) roomHeader.classList.remove('hidden');
       showError('');
     }
 
@@ -1561,12 +1564,21 @@
       document.getElementById('view-room').classList.remove('hidden');
       document.getElementById('btn-new-council').classList.remove('hidden');
 
-      const url = new URL(window.location.href);
-      url.searchParams.set('room', sessionId);
-      window.history.pushState({}, '', url.toString());
+      const isGroup = !sessionId.startsWith('s_');
+      const roomHeader = document.querySelector('.room-header');
 
-      document.getElementById('room-code-display').innerText = sessionId;
-      document.getElementById('share-link-input').value = url.toString();
+      if (isGroup) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('room', sessionId.toUpperCase());
+        window.history.pushState({}, '', url.toString());
+        document.getElementById('room-code-display').innerText = sessionId.toUpperCase();
+        document.getElementById('share-link-input').value = url.toString();
+        if (roomHeader) roomHeader.classList.remove('hidden');
+      } else {
+        // Solo council session: keep clean URL and hide share header
+        window.history.replaceState({}, '', window.location.pathname);
+        if (roomHeader) roomHeader.classList.add('hidden');
+      }
 
       try {
         const joinedName = sessionStorage.getItem('pc_joined_' + sessionId);
@@ -1693,8 +1705,12 @@
         const resp = await fetch(`/api/session/${currentSessionId}`);
         if (!resp.ok) {
           if (resp.status === 404) {
-            showError('Room not found or expired.');
+            showError('This council session has expired or the server was restarted. Returning to home...');
             if (pollInterval) clearInterval(pollInterval);
+            pollInterval = null;
+            setTimeout(() => {
+              resetToHome();
+            }, 1800);
           }
           return;
         }
@@ -2169,7 +2185,8 @@
       const params = new URLSearchParams(window.location.search);
       const room = params.get('room');
       if (room) {
-        openRoom(room.trim().toUpperCase());
+        const clean = room.trim();
+        openRoom(clean.startsWith('s_') || clean.startsWith('S_') ? clean.toLowerCase() : clean.toUpperCase());
       }
     });
 

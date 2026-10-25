@@ -1,7 +1,7 @@
-# Persona Council 🏛️
-> **Private Personal AIs Negotiating Group Consensus**
+# AI Council ⚖️
+> **Private Multi-Agent Consensus Engine**
 
-Built for an 8-hour hackathon. Persona Council gives every participant their own autonomous AI representative. The personal AIs negotiate a group decision, rate the outcome privately for their own human stakeholder, and iterate through structured revisions until everyone is satisfied or the token budget is reached. It also directly benchmarks the multi-agent consensus against a single plain LLM call with transparent token accounting.
+Built for an 8-hour hackathon. AI Council gives every participant their own autonomous AI representative. The personal AIs negotiate a group decision, rate the outcome privately for their own human stakeholder, and iterate through structured revisions until everyone is satisfied or the token budget is reached. It also directly benchmarks the multi-agent consensus against a single plain LLM call with transparent token accounting.
 
 ---
 
@@ -15,7 +15,7 @@ pip install -r requirements.txt
 ```
 
 ### 2. Environment Variables
-Persona Council is powered by **Gemma 4** through the Gemini API (provided via MLH), with optional support for OpenAI-compatible endpoints.
+AI Council is powered by **Gemma 4** through the Gemini API (provided via MLH), with optional support for OpenAI-compatible endpoints.
 
 ```bash
 # Required: API Key
@@ -80,7 +80,7 @@ In Group Mode:
 
 ## ⚡ The 7-Stage Pipeline & Cost Efficiency
 
-Standard multi-agent debate burns hundreds of thousands of tokens by having agents exchange long unconstrained essays. Persona Council achieves consensus at a fraction of the cost through 5 key architectural decisions:
+Standard multi-agent debate burns hundreds of thousands of tokens by having agents exchange long unconstrained essays. AI Council achieves consensus at a fraction of the cost through 5 key architectural decisions:
 
 1. **Dual Model Tiering**: Fast model (`gemma-4-26b-a4b-it`) runs high-volume parallel stages; strong model (`gemma-4-31b-it`) is reserved for the moderator verdict, revisions, and baseline.
 2. **Compact JSON Claims**: Proposals are strictly capped at $\le 20$ words for stance, $\le 3$ points ($\le 15$ words), and $\le 2$ risks ($\le 15$ words) with `max_tokens: 250`.
@@ -102,7 +102,7 @@ Standard multi-agent debate burns hundreds of thousands of tokens by having agen
 ## 📊 Council vs. Single-Call Baseline
 
 Does multi-agent consensus actually produce better outcomes than just asking a single strong LLM?
-Persona Council answers this with real data:
+AI Council answers this with real data:
 - Runs an optional parallel single-call baseline on the strong model given all constraints.
 - Has each participant's personal AI rate both outcomes using identical criteria.
 - Displays a head-to-head card comparing **Lowest Score**, **Average Score**, and **Token Delta**.

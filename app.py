@@ -34,6 +34,30 @@ MAX_REVISIONS = int(os.environ.get("MAX_REVISIONS", 2))
 TOKEN_BUDGET = int(os.environ.get("TOKEN_BUDGET", 25000))
 SESSION_TTL = 6 * 3600
 
+def get_api_keys():
+    keys = []
+    raw = os.environ.get("LLM_API_KEYS", "") or os.environ.get("LLM_API_KEY", "")
+    for k in re.split(r'[,;\n]', raw):
+        k = k.strip()
+        if k and k not in keys:
+            keys.append(k)
+    for i in range(1, 10):
+        k = os.environ.get(f"LLM_API_KEY_{i}", "").strip()
+        if k and k not in keys:
+            keys.append(k)
+    return keys
+
+def get_agent_key(agent_name=None, custom_key=None):
+    if custom_key:
+        return custom_key
+    keys = get_api_keys()
+    if not keys:
+        return os.environ.get("LLM_API_KEY", "")
+    if agent_name:
+        idx = abs(hash(agent_name)) % len(keys)
+        return keys[idx]
+    return keys[0]
+
 ROOM_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 STAGE_NAMES = [
     "1. Proposals",
@@ -83,17 +107,25 @@ def extract_json(text):
         return None
 
 # LLM Core Engine
-def llm(prompt, max_tokens, temperature, model=None):
+def llm(prompt, max_tokens, temperature, model=None, api_key=None):
     if model is None:
         model = LLM_MODEL
     
     import requests
     
+    keys_pool = get_api_keys()
+    if api_key:
+        active_keys = [api_key] + [k for k in keys_pool if k != api_key]
+    elif keys_pool:
+        active_keys = list(keys_pool)
+    else:
+        active_keys = [os.environ.get("LLM_API_KEY", "")]
+    
     if LLM_PROVIDER.lower() == "openai":
         url = f"{LLM_BASE_URL.rstrip('/')}/chat/completions"
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {LLM_API_KEY}"
+            "Authorization": f"Bearer {active_keys[0]}"
         }
         body = {
             "model": model,
@@ -111,9 +143,6 @@ def llm(prompt, max_tokens, temperature, model=None):
         return text, {"in": in_tok, "out": out_tok}
     
     # Gemini Provider (Default)
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={LLM_API_KEY}"
-    headers = {"Content-Type": "application/json"}
-    
     gen_config = {
         "maxOutputTokens": max_tokens,
         "temperature": temperature
@@ -129,27 +158,33 @@ def llm(prompt, max_tokens, temperature, model=None):
     }
     
     data = None
-    for attempt in range(3):
+    last_err = None
+    max_tries = max(3, len(active_keys) * 2)
+    for attempt in range(max_tries):
+        current_key = active_keys[attempt % len(active_keys)]
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={current_key}"
+        headers = {"Content-Type": "application/json"}
         try:
             resp = requests.post(url, json=body, headers=headers, timeout=60)
-            if resp.status_code in [503, 429] and attempt < 2:
-                time.sleep(1.5 * (attempt + 1))
+            if resp.status_code in [503, 429] and attempt < max_tries - 1:
+                time.sleep(1.0)
                 continue
             resp.raise_for_status()
             data = resp.json()
             break
         except Exception as e:
-            if attempt < 2 and ("503" in str(e) or "429" in str(e)):
-                time.sleep(1.5 * (attempt + 1))
+            last_err = e
+            if attempt < max_tries - 1 and ("503" in str(e) or "429" in str(e) or "quota" in str(e).lower()):
+                time.sleep(1.0)
                 continue
             # If strong model fails with 503 or quota, fallback gracefully to fast model
             if model == LLM_MODEL_STRONG and model != LLM_MODEL:
                 print(f"Warning: {model} unavailable, falling back to {LLM_MODEL}", file=sys.stderr)
-                return llm(prompt, max_tokens, temperature, model=LLM_MODEL)
+                return llm(prompt, max_tokens, temperature, model=LLM_MODEL, api_key=current_key)
             raise e
     
     if data is None:
-        raise RuntimeError("No response data received from model API")
+        raise last_err or RuntimeError("No response data received from model API")
 
     parts = []
     candidates = data.get("candidates", [])
@@ -175,9 +210,10 @@ def llm(prompt, max_tokens, temperature, model=None):
         
     return text, {"in": in_tok, "out": out_tok}
 
-def call(session, stage, prompt, max_tokens, temperature, strong=False):
+def call(session, stage, prompt, max_tokens, temperature, strong=False, agent_name=None, custom_key=None):
     model = LLM_MODEL_STRONG if strong else LLM_MODEL
-    text, usage = llm(prompt, max_tokens, temperature, model=model)
+    key = get_agent_key(agent_name=agent_name, custom_key=custom_key)
+    text, usage = llm(prompt, max_tokens, temperature, model=model, api_key=key)
     with session_lock:
         if stage not in session["usage"]:
             session["usage"][stage] = {"calls": 0, "in": 0, "out": 0}
@@ -220,7 +256,7 @@ def run_pipeline(session_id):
                 f'{{"position": "<your stance, <=20 words>", "points": ["<=3 key arguments, <=15 words each"], "risks": ["<=2 key risks/objections, <=15 words each"]}}\n'
                 f"Ensure the output is valid JSON."
             )
-            raw_text = call(session, "1. Proposals", prompt, max_tokens=250, temperature=0.3, strong=False)
+            raw_text = call(session, "1. Proposals", prompt, max_tokens=250, temperature=0.3, strong=False, agent_name=ag["name"], custom_key=ag.get("api_key"))
             parsed = extract_json(raw_text)
             if isinstance(parsed, dict) and "position" in parsed:
                 position = str(parsed.get("position", "")).strip()
@@ -291,7 +327,7 @@ def run_pipeline(session_id):
                     f"Return ONLY a JSON array of at most 3 items with exact format:\n"
                     f'[{{"target": "<target agent name>", "flaw": "<flaw in their stance, <=20 words>", "fix": "<compromise/fix, <=20 words>"}}]'
                 )
-                raw_c = call(session, "3. Critique", prompt, max_tokens=250, temperature=0.3, strong=False)
+                raw_c = call(session, "3. Critique", prompt, max_tokens=250, temperature=0.3, strong=False, agent_name=ag["name"], custom_key=ag.get("api_key"))
                 parsed = extract_json(raw_c)
                 items = []
                 if isinstance(parsed, list):
@@ -356,7 +392,7 @@ def run_pipeline(session_id):
                 f"Be completely honest and critical, not polite. A score of 1 means unacceptable/dealbreaker violated; 5 means ideal.\n"
                 f'Return ONLY a JSON object: {{"score": <integer 1-5>, "reason": "<brief justification, <=20 words>"}}'
             )
-            raw_r = call(session, stage_label, prompt, max_tokens=80, temperature=0.0, strong=False)
+            raw_r = call(session, stage_label, prompt, max_tokens=80, temperature=0.0, strong=False, agent_name=ag["name"], custom_key=ag.get("api_key"))
             parsed = extract_json(raw_r)
             score = 3
             reason = "Standard compromise"
@@ -543,7 +579,7 @@ def index():
     html_path = os.path.join(os.path.dirname(__file__), "index.html")
     if os.path.exists(html_path):
         return send_file(html_path)
-    return "<h3>Persona Council - index.html missing</h3>", 404
+    return "<h3>AI Council - index.html missing</h3>", 404
 
 @app.route("/api/session", methods=["POST"])
 def create_session():
@@ -575,7 +611,7 @@ def create_session():
             if name.lower() in seen:
                 return jsonify({"error": f"Duplicate persona name: {name}"}), 400
             seen.add(name.lower())
-            clean_agents.append({"name": name, "profile": profile or name})
+            clean_agents.append({"name": name, "profile": profile or name, "api_key": a.get("api_key")})
 
         session_id = f"s_{int(time.time()*1000)}_{random.randint(100, 999)}"
         new_session = {
@@ -630,9 +666,9 @@ def create_session():
 @app.route("/api/session/<sid>", methods=["GET"])
 def get_session(sid):
     clean_expired_sessions()
-    sid = sid.strip().upper() if len(sid) in [4, 5] and not sid.startswith("s_") else sid.strip()
+    sid = sid.strip()
     with session_lock:
-        session = SESSIONS.get(sid)
+        session = SESSIONS.get(sid) or SESSIONS.get(sid.upper()) or SESSIONS.get(sid.lower())
         if not session:
             return jsonify({"error": f"Room '{sid}' not found"}), 404
         return jsonify(get_public_session(session)), 200
@@ -677,9 +713,11 @@ def join_session(sid):
             if a["name"].lower() == name.lower():
                 return jsonify({"error": f"The name '{name}' is already taken in this room"}), 400
 
+        custom_api_key = data.get("api_key", "").strip() or None
         session["agents"].append({
             "name": name,
-            "profile": profile_str
+            "profile": profile_str,
+            "api_key": custom_api_key
         })
 
         return jsonify({
